@@ -1,4 +1,7 @@
 import 'reflect-metadata';
 import { createConnection } from 'typeorm';
 
-createConnection();
+export let isConnected = false;
+
+createConnection()
+  .then(() => isConnected = true)

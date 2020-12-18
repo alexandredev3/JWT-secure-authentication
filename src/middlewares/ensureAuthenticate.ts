@@ -1,27 +1,43 @@
 import { Context, Next } from 'koa';
-import { instanceCachingFactory } from 'tsyringe';
-import JwtTokenProvider from '../utils/jwtToken';
+import jwt from 'jsonwebtoken';
 
-interface ResponseError {
-  status: number,
-  message: string;
-  code: string;
+import config from '../config';
+
+const { 
+  secret_public,
+} = config.auth
+
+interface IUserPayload {
+  id: string;
+  role: string;
 }
 
-const { verify } = JwtTokenProvider;
-
-const extractToken = (context: Context): String => {
+const extractToken = (context: Context): string => {
   const authorizationHeader = context.headers.authorization || '';
 
-  return authorizationHeader.replace('Bearer ', '');
+  const token: string = authorizationHeader.replace('Bearer ', '');
+
+  return token;
 };
+
+const verify = (token: string) => {
+  // não use o decoded, o decoded so vai extrair as informações do payload é não verificar se o token e valido.
+  const data = jwt.verify(token, secret_public, (error, data) => {
+    if (error)
+      return error;
+
+    return data;
+  });
+
+  return data as unknown as IUserPayload;
+}
 
 export default (context: Context, next: Next) => {
   const token = extractToken(context);
 
-  const tokenVerify = verify(token as string);
+  const tokenPayload = verify(token);
 
-  if (tokenVerify instanceof Error) {
+  if (tokenPayload instanceof Error) {
     return context.response.body = {
       status: context.response.status = 401,
       message: 'Invalid authentication token',
@@ -29,8 +45,7 @@ export default (context: Context, next: Next) => {
     }
   }
 
-  context.state.userId = tokenVerify;
+  context.state.user = tokenPayload;
 
   return next();
 }
-

@@ -1,10 +1,11 @@
 import { injectable, inject } from 'tsyringe';
+import { sign, SignOptions } from 'jsonwebtoken';
 
 import IUserRepository from '../repositories/IUserRepository';
 
 import IHashProvider from '../providers/HashProvider/models/IHashProvider';
 
-import jwtTokenProvider from '../utils/jwtToken';
+import config from '../config/index';
 
 interface IRequest {
   email: string;
@@ -20,6 +21,16 @@ interface IResponse {
   };
   token: string;
 }
+
+const { 
+  expiresIn, 
+  secret_private 
+} = config.auth;
+
+const signOptions: SignOptions = {
+  expiresIn,
+  algorithm: 'RS256'
+};
 
 @injectable()
 class AuthenticateService {
@@ -60,7 +71,7 @@ class AuthenticateService {
       throw new Error('Password does not match');
     }
 
-    const token = jwtTokenProvider.sign({ id: String(id), role });
+    const token = sign({ id: String(id), role }, secret_private, signOptions);
 
     return {
       user: {
