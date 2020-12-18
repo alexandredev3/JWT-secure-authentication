@@ -12,7 +12,7 @@ interface IUserPayload {
   role: string;
 }
 
-const extractToken = (context: Context): string => {
+const extractToken = (context: Context) => {
   const authorizationHeader = context.headers.authorization || '';
 
   const token: string = authorizationHeader.replace('Bearer ', '');
